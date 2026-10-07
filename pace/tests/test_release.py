@@ -1,17 +1,19 @@
 import ast
 import copy
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 import numpy as np
 from openpi_pace.configs import TASKS
 from prepare_local import prepare
 import pytest
-from run_robotwin import stop
-from run_robotwin import wait_ready
+import tyro
 
 from openpi import transforms
+from openpi.policies import policy_config
 from openpi.training import config
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -137,12 +139,31 @@ def test_seven_demo_data_rejected(tmp_path):
     assert not (tmp_path / "checkpoints").exists()
 
 
-def test_server_exit_and_cleanup():
-    process = subprocess.Popen(["python3", "-c", "pass"], start_new_session=True)
-    process.wait(timeout=10)
-    with pytest.raises(RuntimeError, match="server exited"):
-        wait_ready(process, 1, 1)
-    stop(process)
-    process = subprocess.Popen(["python3", "-c", "import time; time.sleep(60)"], start_new_session=True)
-    stop(process)
-    assert process.poll() is not None
+def test_official_serve_cli_loads_registered_task(monkeypatch, tmp_path):
+    spec = importlib.util.spec_from_file_location("official_serve_policy_test", ROOT / "scripts/serve_policy.py")
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, module)
+    spec.loader.exec_module(module)
+    args = tyro.cli(
+        module.Args,
+        args=[
+            "--port",
+            "8123",
+            "policy:checkpoint",
+            "--policy.config",
+            "pi05_robotwin_adjust_bottle",
+            "--policy.dir",
+            str(tmp_path),
+        ],
+    )
+    calls = []
+    sentinel = object()
+
+    def load(cfg, checkpoint, **kwargs):
+        calls.append((cfg.name, checkpoint))
+        return sentinel
+
+    monkeypatch.setattr(policy_config, "create_trained_policy", load)
+    assert module.create_policy(args) is sentinel
+    assert calls == [("pi05_robotwin_adjust_bottle", str(tmp_path))]
+    assert args.port == 8123

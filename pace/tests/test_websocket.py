@@ -3,16 +3,31 @@ import inspect
 import multiprocessing
 import socket
 import time
+import urllib.error
+import urllib.request
 
 import numpy as np
 from openpi_client import msgpack_numpy
 from openpi_client.websocket_client_policy import WebsocketClientPolicy
 import pytest
-from run_robotwin import wait_ready
 import websockets.sync.client
 from websockets.sync.client import connect
 
 from openpi.serving.websocket_policy_server import WebsocketPolicyServer
+
+
+def wait_ready(process, port, timeout):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError("test server exited")
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=1) as response:
+                if response.status == 200:
+                    return
+        except (urllib.error.URLError, TimeoutError):
+            time.sleep(0.1)
+    raise TimeoutError("test server did not start")
 
 
 class CountingPolicy:

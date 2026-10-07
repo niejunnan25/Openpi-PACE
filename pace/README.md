@@ -16,10 +16,7 @@ unrelated private experiments and their configurations are not included.
 pace/
   src/openpi_pace/configs.py   # shared settings and 50 task names
   scripts/prepare_local.py    # optional local views of existing assets
-  scripts/serve.py            # one task's model server
-  scripts/run_robotwin.py     # fresh server + one evaluation batch
-  scripts/run_batch.py        # job CSV + one worker per specified GPU
-  tests/                     # configuration, transforms and launcher checks
+  tests/                     # configurations, transforms and communication
   README.md
 ```
 
@@ -112,103 +109,43 @@ no Aloha joint flips or gripper conversion. The 12 arm dimensions use deltas ins
 the model pipeline; the two grippers remain absolute. Returned actions are
 **50 × 14 absolute joint/gripper commands**, restored to the environment's space.
 
-## Serve and evaluate
+## Serve a policy
 
-To run only a server:
+Activate the OpenPI environment and run the official entry point from this
+repository root:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 XLA_PYTHON_CLIENT_MEM_FRACTION=0.2 \
-python pace/scripts/serve.py --task adjust_bottle \
-  --checkpoint-dir /path/to/pi05-robotwin/adjust_bottle --port 8000
+python scripts/serve_policy.py \
+  --port 8000 \
+  policy:checkpoint \
+  --policy.config pi05_robotwin_adjust_bottle \
+  --policy.dir /path/to/pi05-robotwin/adjust_bottle
 ```
 
-To launch one complete job, with a fresh server and automatic process cleanup:
+`--policy.config` selects the task configuration; `--policy.dir` selects the
+checkpoint, including its saved normalization. `CUDA_VISIBLE_DEVICES` selects the
+model GPU. The memory fraction matches the original scheduler and allows multiple
+services on a GPU with sufficient memory. The server returns complete action
+chunks; Fixed H and PACE are selected by the RoboTwin client.
+
+In a second terminal, activate the RoboTwin environment and run from
+**RoboTwin-PACE**:
 
 ```bash
-python pace/scripts/run_robotwin.py \
-  --task adjust_bottle --checkpoint-root /path/to/pi05-robotwin \
-  --robotwin-root /path/to/RoboTwin-PACE \
-  --client-python /path/to/robotwin-env/bin/python \
-  --server-python /path/to/openpi-env/bin/python \
-  --gpu 0 --port 8000 --method fixed --horizon 50 --seed 0 --batch 1 \
-  --episodes 1 --save-actions --output pace/runs/smoke-fixed
+python pace/scripts/evaluate.py \
+  --task adjust_bottle --method pace --gpu 0 --port 8000
 ```
 
-Repeat with `--method pace --horizon 50` and a new output directory. Supply the
-machine's Vulkan/NVIDIA library settings in the environment when required by
-RoboTwin. For the paper protocol use 100 episodes, seeds 0/1/2 and batches 1/2/3.
-The batch index labels repeats of the same scene seed sequence.
+For a fixed baseline use `--method fixed --horizon 25`. Each client evaluates
+100 episodes. Stop the server with Ctrl-C afterwards, and start a fresh server
+for each independent evaluation; this resets the model RNG to its original state.
+The policy defaults remain RNG seed 0 and ten denoising steps.
 
-The launcher starts a fresh server per task/seed/batch, with model RNG 0 and ten
-denoising steps, just as the original schedulers. The evaluation seed controls
-scenes; it does not replace the model seed. Readiness/metadata checks do not query
-the model. Server metadata records task, config, checkpoint path and normalization
-SHA-256. Logs, episode records and optional full-precision action chunks are saved
-under the job directory. The launcher checks completion and terminates only its own
-server/client process groups. `--startup-timeout` and `--client-timeout` bound waits.
-
-As in the original RoboTwin scripts, the scene seed does not seed Python's random
-instruction generator. Equal evaluation seeds do not guarantee identical prompts;
-use recorded prompts for comparisons that require matching language inputs.
-
-A few episodes verify connectivity and action execution, not the paper success rate.
-
-## Batch evaluation
-
-Generate the paper job list with the companion repository's planner:
-
-```bash
-python /path/to/RoboTwin-PACE/pace/scripts/plan.py --output pace/runs/jobs.csv
-```
-
-From OpenPI-PACE, run a selected task and comparison on the available GPUs:
-
-```bash
-python pace/scripts/run_batch.py \
-  --jobs pace/runs/jobs.csv \
-  --checkpoint-root /path/to/pi05-robotwin \
-  --robotwin-root /path/to/RoboTwin-PACE \
-  --client-python /path/to/robotwin-env/bin/python \
-  --server-python /path/to/openpi-env/bin/python \
-  --gpus 0 1 --output pace/runs/evaluation \
-  --tasks adjust_bottle --methods fixed_h50 pace --seeds 0 --batches 1
-```
-
-Add `--dry-run` to preview the selection without loading models or creating
-outputs. Omit the four selection flags to run all 1,800 jobs: 50 tasks, four
-methods, three seeds and three batches, with 100 episodes per job. For a small
-integration check use a separate output directory and `--episodes 1`.
-
-The runner uses one job per specified GPU and consecutive ports starting at
-`--port-base` (default 8000). Each job calls `run_robotwin.py`, which starts a
-fresh policy service and cleans it up before the next job. Ctrl-C or SIGTERM
-stops new dispatches and lets active launchers clean up their own processes.
-On multiple hosts, use disjoint task selections or CSV subsets and separate
-output directories.
-
-Results are saved under `<output>/<task>/<method>/seedN/batchN/`, with the
-existing server/client logs and `evaluation/` records. `batch_summary.json`
-lists the current selection's completed, skipped and failed jobs; `launcher_logs/`
-contains each launcher's output. Any failed job makes the batch command exit
-nonzero after the other queued jobs finish.
-
-Running the command again skips results whose settings and episode records
-match the requested job. Existing incomplete jobs are reported as failed. Add
-`--retry-failed` to rerun them; previous attempts are moved to the adjacent
-`<output>_failed/` directory, preserving their logs outside the result tree used
-for aggregation. Completed results with different settings require a separate
-output directory. `--save-actions` enables action recording for newly run jobs.
-
-After the full paper grid completes, summarize from the RoboTwin environment:
-
-```bash
-/path/to/robotwin-env/bin/python /path/to/RoboTwin-PACE/pace/scripts/summarize.py \
-  --runs /absolute/path/to/OpenPI-PACE/pace/runs/evaluation \
-  --output /absolute/path/to/OpenPI-PACE/pace/runs/paper_summary.json
-```
-
-The paper summarizer requires the complete grid; a selected-task or one-episode
-check can be inspected through `batch_summary.json` and the per-job records.
+See the companion [evaluation guide](../../RoboTwin-PACE/pace/README.md#evaluate-one-task)
+for results and the [Bash scheduler](../../RoboTwin-PACE/pace/README.md#evaluate-multiple-tasks)
+for eight GPUs with three independent server/client pairs per GPU. Scheduling
+and process cleanup live in RoboTwin-PACE; no separate PACE server is needed.
 
 ## Tests
 
