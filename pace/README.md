@@ -7,8 +7,8 @@ calibration live only in RoboTwin-PACE; this repository returns complete action 
 ## Base and layout
 
 Based on official OpenPI commit `2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea`
-(2025-12-05). The model, Aloha adapter, checkpoint loader, policy implementation
-and websocket client match the audited experiment implementation. All built-in
+(2025-12-05). The model, Aloha adapter, checkpoint loader and policy implementation
+match the audited experiment implementation. All built-in
 OpenPI configurations remain available. Fifty paper configurations are added;
 unrelated private experiments and their configurations are not included.
 
@@ -23,8 +23,8 @@ pace/
 ```
 
 Outside `pace/`, changes register the new configurations/package, save computed
-normalization statistics under the configured asset ID, disable websocket heartbeat
-timeouts during long simulator steps, and add README/ignore entries. Model inference,
+normalization statistics under the configured asset ID, disable server and client websocket
+heartbeats during blocking simulation/model compilation, and add README/ignore entries. Model inference,
 transforms and checkpoint loading remain upstream code.
 
 ## Install
@@ -145,6 +145,10 @@ the model. Server metadata records task, config, checkpoint path and normalizati
 SHA-256. Logs, episode records and optional full-precision action chunks are saved
 under the job directory. The launcher checks completion and terminates only its own
 server/client process groups. `--startup-timeout` and `--client-timeout` bound waits.
+
+As in the original RoboTwin scripts, the scene seed does not seed Python's random
+instruction generator. Equal evaluation seeds do not guarantee identical prompts;
+use recorded prompts for comparisons that require matching language inputs.
 
 A few episodes verify connectivity and action execution, not the paper success rate.
 

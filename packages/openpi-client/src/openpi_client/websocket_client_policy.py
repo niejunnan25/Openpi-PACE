@@ -1,3 +1,4 @@
+import inspect
 import logging
 import time
 from typing import Dict, Optional, Tuple
@@ -34,8 +35,13 @@ class WebsocketClientPolicy(_base_policy.BasePolicy):
         while True:
             try:
                 headers = {"Authorization": f"Api-Key {self._api_key}"} if self._api_key else None
+                # Synchronous keepalive was added in websockets 15. Model compilation
+                # blocks the server event loop; older clients have no keepalive options.
+                keepalive = {}
+                if "ping_interval" in inspect.signature(websockets.sync.client.connect).parameters:
+                    keepalive = {"ping_interval": None, "ping_timeout": None}
                 conn = websockets.sync.client.connect(
-                    self._uri, compression=None, max_size=None, additional_headers=headers
+                    self._uri, compression=None, max_size=None, additional_headers=headers, **keepalive
                 )
                 metadata = msgpack_numpy.unpackb(conn.recv())
                 return conn, metadata
