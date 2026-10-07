@@ -1,6 +1,7 @@
 """Run one evaluation batch with a fresh model server and the RoboTwin-PACE client."""
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -20,13 +21,16 @@ from websockets.sync.client import connect
 
 
 def stop(process):
-    if process is not None and process.poll() is None:
+    if process is None:
+        return
+    # Workers can outlive their parent; signal the group even after parent exit.
+    with contextlib.suppress(ProcessLookupError):
         os.killpg(process.pid, signal.SIGTERM)
-        try:
-            process.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        process.wait(timeout=15)
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGKILL)
+    process.wait()
 
 
 def wait_ready(server, port, timeout):
@@ -171,8 +175,10 @@ def main():
                 )
             )
     finally:
-        stop(client)
-        stop(server)
+        try:
+            stop(client)
+        finally:
+            stop(server)
 
 
 if __name__ == "__main__":

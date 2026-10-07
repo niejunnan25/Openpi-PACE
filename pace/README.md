@@ -22,9 +22,10 @@ pace/
   README.md
 ```
 
-Outside `pace/`, changes only register the new configurations/package, disable
-websocket heartbeat timeouts during long simulator steps, and add README/ignore
-entries. Model inference, transforms and checkpoint loading remain upstream code.
+Outside `pace/`, changes register the new configurations/package, save computed
+normalization statistics under the configured asset ID, disable websocket heartbeat
+timeouts during long simulator steps, and add README/ignore entries. Model inference,
+transforms and checkpoint loading remain upstream code.
 
 ## Install
 
