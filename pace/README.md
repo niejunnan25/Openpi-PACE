@@ -35,8 +35,9 @@ GIT_LFS_SKIP_SMUDGE=1 uv sync
 source .venv/bin/activate
 ```
 
-The package build includes `openpi_pace`. Checkout entry points also locate the
-source directories directly. Keep the RoboTwin simulator in its own environment;
+The package build includes `openpi_pace`; install from this checkout so the
+official server can import its registered task configurations. Keep the RoboTwin
+simulator in its own environment;
 install the client there with `python -m pip install -e /path/to/OpenPI-PACE/packages/openpi-client`.
 The upstream lockfile pins dependencies. Reusing a working environment is possible;
 review its installed versions separately from the source-code comparison.
