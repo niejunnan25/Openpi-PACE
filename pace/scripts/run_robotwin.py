@@ -48,6 +48,13 @@ def wait_ready(server, port, timeout):
     raise TimeoutError("policy server did not become ready; see server.log")
 
 
+def check_port(port):
+    with socket.socket() as probe:
+        # Match the server's reuse setting so TIME_WAIT does not block the next job.
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind(("127.0.0.1", port))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", required=True, choices=TASKS)
@@ -76,8 +83,7 @@ def main():
     output = args.output.resolve()
     client_python = str(Path(args.client_python).absolute())
     server_python = str(Path(args.server_python).absolute())
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", args.port))
+    check_port(args.port)
     output.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = args.gpu

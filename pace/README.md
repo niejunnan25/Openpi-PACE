@@ -18,6 +18,7 @@ pace/
   scripts/prepare_local.py    # optional local views of existing assets
   scripts/serve.py            # one task's model server
   scripts/run_robotwin.py     # fresh server + one evaluation batch
+  scripts/run_batch.py        # job CSV + one worker per specified GPU
   tests/                     # configuration, transforms and launcher checks
   README.md
 ```
@@ -151,6 +152,63 @@ instruction generator. Equal evaluation seeds do not guarantee identical prompts
 use recorded prompts for comparisons that require matching language inputs.
 
 A few episodes verify connectivity and action execution, not the paper success rate.
+
+## Batch evaluation
+
+Generate the paper job list with the companion repository's planner:
+
+```bash
+python /path/to/RoboTwin-PACE/pace/scripts/plan.py --output pace/runs/jobs.csv
+```
+
+From OpenPI-PACE, run a selected task and comparison on the available GPUs:
+
+```bash
+python pace/scripts/run_batch.py \
+  --jobs pace/runs/jobs.csv \
+  --checkpoint-root /path/to/pi05-robotwin \
+  --robotwin-root /path/to/RoboTwin-PACE \
+  --client-python /path/to/robotwin-env/bin/python \
+  --server-python /path/to/openpi-env/bin/python \
+  --gpus 0 1 --output pace/runs/evaluation \
+  --tasks adjust_bottle --methods fixed_h50 pace --seeds 0 --batches 1
+```
+
+Add `--dry-run` to preview the selection without loading models or creating
+outputs. Omit the four selection flags to run all 1,800 jobs: 50 tasks, four
+methods, three seeds and three batches, with 100 episodes per job. For a small
+integration check use a separate output directory and `--episodes 1`.
+
+The runner uses one job per specified GPU and consecutive ports starting at
+`--port-base` (default 8000). Each job calls `run_robotwin.py`, which starts a
+fresh policy service and cleans it up before the next job. Ctrl-C or SIGTERM
+stops new dispatches and lets active launchers clean up their own processes.
+On multiple hosts, use disjoint task selections or CSV subsets and separate
+output directories.
+
+Results are saved under `<output>/<task>/<method>/seedN/batchN/`, with the
+existing server/client logs and `evaluation/` records. `batch_summary.json`
+lists the current selection's completed, skipped and failed jobs; `launcher_logs/`
+contains each launcher's output. Any failed job makes the batch command exit
+nonzero after the other queued jobs finish.
+
+Running the command again skips results whose settings and episode records
+match the requested job. Existing incomplete jobs are reported as failed. Add
+`--retry-failed` to rerun them; previous attempts are moved to the adjacent
+`<output>_failed/` directory, preserving their logs outside the result tree used
+for aggregation. Completed results with different settings require a separate
+output directory. `--save-actions` enables action recording for newly run jobs.
+
+After the full paper grid completes, summarize from the RoboTwin environment:
+
+```bash
+/path/to/robotwin-env/bin/python /path/to/RoboTwin-PACE/pace/scripts/summarize.py \
+  --runs /absolute/path/to/OpenPI-PACE/pace/runs/evaluation \
+  --output /absolute/path/to/OpenPI-PACE/pace/runs/paper_summary.json
+```
+
+The paper summarizer requires the complete grid; a selected-task or one-episode
+check can be inspected through `batch_summary.json` and the per-job records.
 
 ## Tests
 
