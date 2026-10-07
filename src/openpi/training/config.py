@@ -962,6 +962,10 @@ _CONFIGS = [
     *roboarena_config.get_roboarena_configs(),
 ]
 
+from openpi_pace.configs import make_configs as _make_pace_configs  # noqa: E402
+
+_CONFIGS.extend(_make_pace_configs())
+
 if len({config.name for config in _CONFIGS}) != len(_CONFIGS):
     raise ValueError("Config names must be unique.")
 _CONFIGS_DICT = {config.name: config for config in _CONFIGS}

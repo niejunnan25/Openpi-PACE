@@ -1,3 +1,5 @@
+> **PACE RoboTwin models:** see [pace/README.md](pace/README.md) for the 50 task configurations and evaluation entry points.
+
 # openpi
 
 openpi holds open-source models and packages for robotics, published by the [Physical Intelligence team](https://www.physicalintelligence.company/).
