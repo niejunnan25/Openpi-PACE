@@ -1,8 +1,183 @@
 # OpenPI-PACE
 
-The π₀.₅ training configurations and policy server used with
-[RoboTwin-PACE](../../RoboTwin-PACE/pace/README.md). PACE's horizon selector and
-calibration live only in RoboTwin-PACE; this repository returns complete action chunks.
+This repository provides the task-specific π₀.₅ configurations and official
+model server for PACE on RoboTwin. The server returns complete action chunks;
+**RoboTwin-PACE** contains the PACE selector, simulator client and GPU scheduler.
+Start with the [RoboTwin-PACE evaluation guide](../../RoboTwin-PACE/pace/README.md)
+for the complete workflow.
+
+To run a released checkpoint, follow [installation](#install),
+[download](#download-a-checkpoint) and [serve a policy](#serve-a-policy).
+[Training](#training) and [existing local assets](#use-existing-local-assets)
+are separate workflows.
+
+## Install
+
+Use Linux with an NVIDIA GPU for the JAX model server and a separate environment
+from the RoboTwin simulator. This checkout requires Python 3.11 or newer.
+From the OpenPI-PACE root, initialize the upstream submodules and install with
+[uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+```bash
+cd /path/to/OpenPI-PACE
+git submodule update --init --recursive
+GIT_LFS_SKIP_SMUDGE=1 uv sync
+GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
+source .venv/bin/activate
+```
+
+Install from this checkout so the official server can import `openpi_pace` and
+its 50 task configurations. The upstream lockfile pins the dependencies.
+See the [upstream installation notes](../README.md#installation) for additional
+platform details.
+
+In your separate **RoboTwin environment**, install the client package:
+
+```bash
+python -m pip install -e /path/to/OpenPI-PACE/packages/openpi-client
+```
+
+## Download a checkpoint
+
+The checkpoints are hosted at
+[niejunnan25/pi05-robotwin](https://huggingface.co/niejunnan25/pi05-robotwin).
+They are being published incrementally; consult the model card and
+[manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json)
+for available task names. Each task is approximately 12.4 GB. Training
+demonstrations are not required for inference.
+
+From the OpenPI-PACE root, with its environment active, download the
+`adjust_bottle` checkpoint and shared tokenizer:
+
+```bash
+huggingface-cli download niejunnan25/pi05-robotwin \
+  --include "adjust_bottle/*" tokenizer.model manifest.json TERMS.md NOTICE \
+  --local-dir local/pi05-robotwin
+```
+
+`huggingface-cli` is provided by the Hugging Face Hub version in the lockfile.
+Replace `adjust_bottle/*` with another available task's pattern as needed;
+multiple patterns select multiple tasks. The full RoboTwin queue needs all 50
+checkpoints locally. The downloaded task directory contains:
+
+```text
+local/pi05-robotwin/
+  tokenizer.model
+  manifest.json
+  adjust_bottle/
+    params/
+    assets/robotwin/norm_stats.json
+```
+
+Prepare the tokenizer at the cache location expected by the official server:
+
+```bash
+mkdir -p local/cache/big_vision
+cp local/pi05-robotwin/tokenizer.model local/cache/big_vision/paligemma_tokenizer.model
+```
+
+Keep each task's `params/` and saved normalization together. No parameter
+conversion or normalization recomputation is needed. Model and tokenizer terms
+are provided in the downloaded `TERMS.md` and `NOTICE` files.
+
+## Serve a policy
+
+From the OpenPI-PACE root, with its environment active:
+
+```bash
+OPENPI_DATA_HOME="$PWD/local/cache" \
+CUDA_VISIBLE_DEVICES=0 XLA_PYTHON_CLIENT_MEM_FRACTION=0.2 \
+python scripts/serve_policy.py --port 8000 policy:checkpoint \
+  --policy.config pi05_robotwin_adjust_bottle \
+  --policy.dir local/pi05-robotwin/adjust_bottle
+```
+
+`--policy.config` selects the task configuration; `--policy.dir` selects its
+checkpoint and normalization. `CUDA_VISIBLE_DEVICES` selects the model GPU.
+`OPENPI_DATA_HOME` points to the tokenizer cache prepared above. The memory
+fraction matches the original scheduler; available memory determines how many
+server/client pairs fit on a GPU. Initial inference may compile XLA kernels
+before producing actions.
+
+In a second terminal, activate the **RoboTwin environment** and run from
+**RoboTwin-PACE**:
+
+```bash
+cd /path/to/RoboTwin-PACE
+python pace/scripts/evaluate.py \
+  --task adjust_bottle --method pace --gpu 0 --seed 0 --port 8000
+```
+
+The task and port must match the server. This evaluates **100 episodes**.
+For Fixed H=25, use `--method fixed --horizon 25` in a separate evaluation.
+Stop the server with Ctrl-C afterwards, and start a fresh server for each
+independent evaluation. The policy defaults remain RNG seed 0 and ten denoising
+steps; the client's evaluation seed is a separate setting.
+
+For all 50 tasks, use the [RoboTwin-PACE scheduler](../../RoboTwin-PACE/pace/README.md#evaluate-multiple-tasks),
+which starts and cleans up each server/client pair. Put
+`export OPENPI_DATA_HOME="$OPENPI_ROOT/local/cache"` in its `pace/configs/eval.env`
+along with your environment paths. See [result files](../../RoboTwin-PACE/pace/README.md#read-the-results)
+for episode outcomes and logs.
+
+## Checkpoint configuration details
+
+Each task uses its own step-30,000 EMA weights and normalization statistics.
+The configuration is `pi05_robotwin_<task>`; the local LeRobot dataset ID is
+`robotwin/<task>`. Every configuration uses the normalization asset ID
+`robotwin`, but the file's values are task-specific. `beat_block_hammer` uses
+the historical `_50` weights and 50-demonstration dataset, not the earlier
+seven-demonstration experiment.
+
+The data adapter uses three cameras (`cam_high`, `cam_left_wrist`,
+`cam_right_wrist`) and 14-dimensional joint/gripper states. `adapt_to_pi=False`:
+no Aloha joint flips or gripper conversion. The 12 arm dimensions use deltas
+inside the model pipeline; the two grippers remain absolute. Returned actions
+are **50 × 14 absolute joint/gripper commands**, restored to environment space.
+
+## Use existing local assets
+
+If you already have the original checkpoints, the optional helper can arrange
+them in the same task layout. Create a Git-ignored JSON manifest:
+
+```json
+[
+  {
+    "task": "adjust_bottle",
+    "checkpoint_dir": "/path/to/original/30000",
+    "norm_stats": "/path/to/original/30000/assets/original-id/norm_stats.json"
+  }
+]
+```
+
+```bash
+python pace/scripts/prepare_local.py --manifest local/sources.json \
+  --checkpoint-root local/pi05-robotwin
+```
+
+The destination must be new. This creates parameter symlinks and copies the
+small normalization files byte-for-byte, leaving originals unchanged. Supply
+the tokenizer cache separately as above, or use an existing OpenPI cache.
+For training, each record may also include `dataset_dir`; add
+`--dataset-root local/datasets` to create the corresponding dataset links.
+This local helper is unnecessary for the downloaded checkpoint layout.
+
+## Training
+
+Each paper task uses 50 `demo_clean` demonstrations at 50 Hz. Full-parameter π₀.₅
+fine-tuning uses AdamW, batch size 32, training seed 42 and EMA decay 0.99. Learning
+rate: 1,000-step warmup to 2.5e-5, cosine decay to 2.5e-6 over 30,000 schedule steps.
+The run length is 30,005 steps and the evaluated checkpoint is step 30,000.
+
+```bash
+export HF_LEROBOT_HOME="/absolute/path/to/OpenPI-PACE/local/datasets"
+python scripts/compute_norm_stats.py --config-name pi05_robotwin_adjust_bottle
+python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
+```
+
+Training assets/checkpoints go under `pace/runs/`. Each configuration has its own
+assets directory, even though the inner asset ID is shared. Recomputing statistics
+is for training a new model; use the checkpoint's saved statistics for evaluation.
 
 ## Base and layout
 
@@ -24,129 +199,6 @@ Outside `pace/`, changes register the new configurations/package, save computed
 normalization statistics under the configured asset ID, disable server and client websocket
 heartbeats during blocking simulation/model compilation, and add README/ignore entries. Model inference,
 transforms and checkpoint loading remain upstream code.
-
-## Install
-
-Use Linux with a CUDA GPU for the JAX policy server. From this repository root,
-follow the upstream [installation instructions](../README.md#installation):
-
-```bash
-GIT_LFS_SKIP_SMUDGE=1 uv sync
-source .venv/bin/activate
-```
-
-The package build includes `openpi_pace`; install from this checkout so the
-official server can import its registered task configurations. Keep the RoboTwin
-simulator in its own environment;
-install the client there with `python -m pip install -e /path/to/OpenPI-PACE/packages/openpi-client`.
-The upstream lockfile pins dependencies. Reusing a working environment is possible;
-review its installed versions separately from the source-code comparison.
-
-## Checkpoints and task names
-
-Each task uses its own step-30,000 EMA weights and its own normalization statistics:
-
-```text
-pi05-robotwin/
-  adjust_bottle/
-    params/
-    assets/robotwin/norm_stats.json
-  beat_block_hammer/
-    params/
-    assets/robotwin/norm_stats.json
-  ...
-```
-
-Configuration: `pi05_robotwin_<task>`. Local LeRobot dataset ID: `robotwin/<task>`.
-The normalization asset ID is `robotwin` for every configuration; **the file's
-values are task-specific**. `beat_block_hammer` uses the historical `_50` weights
-and 50-demonstration dataset, not the earlier seven-demonstration experiment.
-No parameter conversion or normalization recomputation is needed for old models.
-
-For existing local assets, create an ignored JSON manifest with a list of records:
-
-```json
-[
-  {
-    "task": "adjust_bottle",
-    "checkpoint_dir": "/path/to/original/30000",
-    "norm_stats": "/path/to/original/30000/assets/original-id/norm_stats.json",
-    "dataset_dir": "/path/to/original/lerobot-task"
-  }
-]
-```
-
-```bash
-python pace/scripts/prepare_local.py --manifest local/sources.json \
-  --checkpoint-root local/pi05-robotwin --dataset-root local/datasets
-```
-
-Destinations must be new. This makes parameter/dataset symlinks and copies the
-small normalization files byte-for-byte, leaving originals unchanged. These local
-views are not a self-contained downloadable release; publish real files when
-packaging checkpoints. Dataset links are optional for inference. The names above
-are a local layout, not a claim that a Hugging Face repository is already published.
-
-## Training
-
-Each paper task uses 50 `demo_clean` demonstrations at 50 Hz. Full-parameter π₀.₅
-fine-tuning uses AdamW, batch size 32, training seed 42 and EMA decay 0.99. Learning
-rate: 1,000-step warmup to 2.5e-5, cosine decay to 2.5e-6 over 30,000 schedule steps.
-The run length is 30,005 steps and the evaluated checkpoint is step 30,000.
-
-```bash
-export HF_LEROBOT_HOME="/absolute/path/to/OpenPI-PACE/local/datasets"
-python scripts/compute_norm_stats.py --config-name pi05_robotwin_adjust_bottle
-python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
-```
-
-Training assets/checkpoints go under `pace/runs/`. Each configuration has its own
-assets directory, even though the inner asset ID is shared. Recomputing statistics
-is for training a new model; use the checkpoint's saved statistics for evaluation.
-
-The data adapter uses three cameras (`cam_high`, `cam_left_wrist`,
-`cam_right_wrist`) and 14-dimensional joint/gripper states. `adapt_to_pi=False`:
-no Aloha joint flips or gripper conversion. The 12 arm dimensions use deltas inside
-the model pipeline; the two grippers remain absolute. Returned actions are
-**50 × 14 absolute joint/gripper commands**, restored to the environment's space.
-
-## Serve a policy
-
-Activate the OpenPI environment and run the official entry point from this
-repository root:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 XLA_PYTHON_CLIENT_MEM_FRACTION=0.2 \
-python scripts/serve_policy.py \
-  --port 8000 \
-  policy:checkpoint \
-  --policy.config pi05_robotwin_adjust_bottle \
-  --policy.dir /path/to/pi05-robotwin/adjust_bottle
-```
-
-`--policy.config` selects the task configuration; `--policy.dir` selects the
-checkpoint, including its saved normalization. `CUDA_VISIBLE_DEVICES` selects the
-model GPU. The memory fraction matches the original scheduler and allows multiple
-services on a GPU with sufficient memory. The server returns complete action
-chunks; Fixed H and PACE are selected by the RoboTwin client.
-
-In a second terminal, activate the RoboTwin environment and run from
-**RoboTwin-PACE**:
-
-```bash
-python pace/scripts/evaluate.py \
-  --task adjust_bottle --method pace --gpu 0 --port 8000
-```
-
-For a fixed baseline use `--method fixed --horizon 25`. Each client evaluates
-100 episodes. Stop the server with Ctrl-C afterwards, and start a fresh server
-for each independent evaluation; this resets the model RNG to its original state.
-The policy defaults remain RNG seed 0 and ten denoising steps.
-
-See the companion [evaluation guide](../../RoboTwin-PACE/pace/README.md#evaluate-one-task)
-for results and the [Bash scheduler](../../RoboTwin-PACE/pace/README.md#evaluate-multiple-tasks)
-for eight GPUs with three independent server/client pairs per GPU. Scheduling
-and process cleanup live in RoboTwin-PACE; no separate PACE server is needed.
 
 ## Tests
 

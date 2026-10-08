@@ -1,4 +1,4 @@
-> **PACE RoboTwin models:** see [pace/README.md](pace/README.md) for the 50 task configurations and evaluation entry points.
+> **PACE model setup:** see [pace/README.md](pace/README.md) to install, download a checkpoint and run the official policy server. Start the complete evaluation workflow in RoboTwin-PACE.
 
 # openpi
 
