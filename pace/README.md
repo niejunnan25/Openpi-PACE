@@ -1,4 +1,4 @@
-# OpenPI-PACE 软件包
+# 📦 OpenPI-PACE 软件包
 
 [仓库首页 README](../README.md) 包含[安装](../README.md#install)、[权重下载](../README.md#download-a-checkpoint)、[模型服务](../README.md#serve-a-policy)和[训练](../README.md#training)说明。
 

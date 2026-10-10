@@ -1,4 +1,4 @@
-<h1 align="center">PACE</h1>
+<h1 align="center">🤖 PACE</h1>
 <h3 align="center">面向动作分块机器人策略的<br>阶段感知动作块执行</h3>
 
 <p align="center"><strong>OpenPI-PACE</strong><br>各任务的 π₀.₅ 策略 &middot; 模型服务 &middot; 训练</p>
@@ -14,12 +14,14 @@
 </p>
 <p align="center"><sub><strong>PACE 方法总览。</strong>根据预测动作中的运动变化，决定执行动作块的前多少步，再重新查询策略。点击图片可查看矢量 PDF。</sub></p>
 
-本仓库为 RoboTwin 上的 PACE 评估提供各任务的 π₀.₅ 配置，以及基于 OpenPI 官方入口的模型服务。服务端返回完整动作块；PACE 执行步数选择器、仿真客户端和 GPU 调度器位于 **RoboTwin-PACE**。完整流程请从 [RoboTwin-PACE 评估指南](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md)开始。
+## ✨ 认识 OpenPI-PACE
 
-使用已发布权重时，依次完成[安装](#install)、[下载权重](#download-a-checkpoint)和[启动模型服务](#serve-a-policy)。[训练](#training)与[整理已有本地资产](#use-existing-local-assets)是另外两种使用方式。
+本仓库为 RoboTwin 上的 PACE 评估提供**各任务的 π₀.₅ 配置**，以及基于 OpenPI 官方入口的**模型服务**。服务端返回完整动作块；PACE 执行步数选择器、仿真客户端和 GPU 调度器位于 **RoboTwin-PACE**。完整流程请从 [RoboTwin-PACE 评估指南](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md)开始。
+
+> 🧭 **阅读路线**：使用已发布权重时，依次完成[安装](#install)、[下载权重](#download-a-checkpoint)和[启动模型服务](#serve-a-policy)。[训练](#training)与[整理已有本地资产](#use-existing-local-assets)是另外两种使用方式。
 
 <a id="install"></a>
-## 安装
+## 🛠️ 安装
 
 JAX 模型服务使用 Linux 和 NVIDIA GPU，Python 环境与 RoboTwin 仿真器分开。本仓库要求 Python 3.11 或更高版本。克隆仓库，初始化上游子模块，然后使用 [uv](https://docs.astral.sh/uv/getting-started/installation/) 安装：
 
@@ -43,7 +45,7 @@ python -m pip install -e /path/to/OpenPI-PACE/packages/openpi-client
 ```
 
 <a id="download-a-checkpoint"></a>
-## 下载模型权重
+## 📦 下载模型权重
 
 模型权重托管在 [niejunnan25/pi05-robotwin](https://huggingface.co/niejunnan25/pi05-robotwin)。可用任务和文件清单以模型卡及 [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json) 为准。每个任务约 12.4 GB，推理不需要训练演示数据。
 
@@ -76,7 +78,7 @@ cp local/pi05-robotwin/tokenizer.model local/cache/big_vision/paligemma_tokenize
 每个任务的 `params/` 和已保存的归一化统计应一起保留，无需转换参数或重新计算归一化统计。模型与分词器的许可条款见下载的 `TERMS.md` 和 `NOTICE`。
 
 <a id="serve-a-policy"></a>
-## 启动模型服务
+## 🚀 启动模型服务
 
 在 OpenPI-PACE 根目录，激活其 Python 环境后运行：
 
@@ -103,14 +105,14 @@ python pace/scripts/evaluate.py \
 评估全部 50 个任务时，请使用 [RoboTwin-PACE 调度器](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks)，由它负责启动和清理各组服务端／客户端。在其 `pace/configs/eval.env` 中设置环境路径，并加入 `export OPENPI_DATA_HOME="$OPENPI_ROOT/local/cache"`。回合结果和日志见[结果文件说明](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#read-the-results)。
 
 <a id="checkpoint-configuration-details"></a>
-## 模型配置说明
+## ⚙️ 模型配置说明
 
 每个任务使用自身训练第 30,000 步的 EMA 权重和归一化统计。配置名为 `pi05_robotwin_<task>`，本地 LeRobot 数据集 ID 为 `robotwin/<task>`。所有配置的归一化资产 ID 都是 `robotwin`，但对应文件的数值各任务不同。`beat_block_hammer` 使用历史 `_50` 权重和 50 条演示数据集，不使用更早的七条演示实验。
 
 数据适配器使用三个相机（`cam_high`、`cam_left_wrist`、`cam_right_wrist`）及 14 维关节／夹爪状态。`adapt_to_pi=False`，不进行 Aloha 关节符号翻转或夹爪转换。模型处理流程内部的 12 个机械臂关节维度使用增量表示，两个夹爪维度保持绝对值。返回给客户端的动作已恢复到环境空间，为 **50 × 14 的绝对关节／夹爪指令**。
 
 <a id="use-existing-local-assets"></a>
-## 使用已有本地资产
+## 🗃️ 使用已有本地资产
 
 如果已有原始权重，可以使用可选辅助工具将它们整理为相同的任务目录结构。先创建一个被 Git 忽略的 JSON 清单：
 
@@ -134,7 +136,7 @@ python pace/scripts/prepare_local.py --manifest local/sources.json \
 若用于训练，可在每条记录中补充 `dataset_dir`，再添加 `--dataset-root local/datasets` 创建对应的数据集链接。对于按前文下载得到的权重目录，无需运行此辅助工具。
 
 <a id="training"></a>
-## 训练
+## 🏋️ 训练
 
 论文中的每个任务使用 50 条 `demo_clean` 演示，采样频率为 50 Hz。π₀.₅ 采用全参数微调，优化器为 AdamW，batch size 为 32，训练 seed 为 42，EMA 衰减为 0.99。学习率先用 1,000 步预热到 2.5e-5，余弦衰减调度的 `decay_steps` 为 30,000，末端学习率为 2.5e-6。总训练长度为 30,005 步，评估使用第 30,000 步的权重。
 
@@ -147,7 +149,7 @@ python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
 训练资产与权重写入 `pace/runs/`。虽然内部资产 ID 相同，每个任务配置仍使用自己的资产目录。重新计算归一化统计用于训练新模型；评估已发布模型时，应使用该权重配套保存的统计。
 
 <a id="base-and-layout"></a>
-## 上游版本与目录结构
+## 🗂️ 上游版本与目录结构
 
 本仓库基于官方 OpenPI 提交 `2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea`（2025-12-05）。模型、Aloha 适配器、权重加载器和策略实现与已审计的实验实现一致。所有 OpenPI 内置配置仍可使用，另新增论文的 50 个任务配置；不包含其他私有实验及其配置。
 
@@ -163,14 +165,14 @@ pace/
 `pace/` 之外的修改包括：注册新增配置与软件包、按配置的资产 ID 保存归一化统计、关闭服务端和客户端的 WebSocket 心跳以适应阻塞式仿真和模型编译，以及更新 README 和 Git 忽略项。模型推理、数据变换与权重加载沿用上游代码。
 
 <a id="tests"></a>
-## 测试
+## 🧪 测试
 
 ```bash
 JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" python -m pytest pace/tests -m "not manual"
 ```
 
 <a id="acknowledgments-and-license"></a>
-## 致谢与许可证
+## 🤝 致谢与许可证
 
 本项目基于 Physical Intelligence 的 [OpenPI](https://github.com/Physical-Intelligence/openpi)。感谢其作者开放策略模型、训练代码与模型服务实现，也感谢 [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin) 作者提供仿真器。PACE 之外的 OpenPI 通用示例见[上游指南](https://github.com/Physical-Intelligence/openpi/blob/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea/README.md)。
 
