@@ -1,6 +1,18 @@
-# OpenPI-PACE
+<h1 align="center">PACE</h1>
+<h3 align="center">Phase-Aware Chunk Execution for Robot Policies<br>with Action Chunking</h3>
 
-**PACE: Phase-Aware Chunk Execution for Robot Policies with Action Chunking**
+<p align="center"><strong>OpenPI-PACE</strong><br>Task-specific π₀.₅ policies &middot; Model serving &middot; Training</p>
+
+<p align="center">
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="Paper PDF" height="24"></a>
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/badge/Project-Website-blue" alt="Project Website" height="24"></a>
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=%F0%9F%A4%97%20Model&amp;message=HuggingFace&amp;color=yellow" alt="Model Hugging Face" height="24"></a>
+</p>
+
+<p align="center">
+  <a href="pace/media/overview.pdf"><img src="pace/media/overview.png" alt="Overview of PACE: fixed-horizon sensitivity, adaptive execution of predicted action chunks, simulation and real-robot results, and changing horizons within one rollout." width="100%"></a>
+</p>
+<p align="center"><sub><strong>Overview of PACE.</strong> Adapt the executed prefix to the predicted motion, then query the policy again. Click the figure for the vector PDF.</sub></p>
 
 This repository provides the task-specific π₀.₅ configurations and official
 model server for PACE on RoboTwin. The server returns complete action chunks;
