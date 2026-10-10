@@ -3,7 +3,7 @@
 This repository provides the task-specific π₀.₅ configurations and official
 model server for PACE on RoboTwin. The server returns complete action chunks;
 **RoboTwin-PACE** contains the PACE selector, simulator client and GPU scheduler.
-Start with the [RoboTwin-PACE evaluation guide](../../RoboTwin-PACE/pace/README.md)
+Start with the [RoboTwin-PACE evaluation guide](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/README.md)
 for the complete workflow.
 
 To run a released checkpoint, follow [installation](#install),
@@ -15,16 +15,21 @@ are separate workflows.
 
 Use Linux with an NVIDIA GPU for the JAX model server and a separate environment
 from the RoboTwin simulator. This checkout requires Python 3.11 or newer.
-From the OpenPI-PACE root, initialize the upstream submodules and install with
+Clone the repository, initialize the upstream submodules and install with
 [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
 ```bash
-cd /path/to/OpenPI-PACE
+git clone https://github.com/niejunnan25/Openpi-PACE.git OpenPI-PACE
+cd OpenPI-PACE
 git submodule update --init --recursive
 GIT_LFS_SKIP_SMUDGE=1 uv sync
 GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 source .venv/bin/activate
 ```
+
+If you already cloned it using the RoboTwin-PACE guide, start with
+`cd /path/to/OpenPI-PACE` and skip the clone command above. The explicit local
+directory name matches the companion guide and scheduler defaults.
 
 Install from this checkout so the official server can import `openpi_pace` and
 its 50 task configurations. The upstream lockfile pins the dependencies.
@@ -114,10 +119,10 @@ Stop the server with Ctrl-C afterwards, and start a fresh server for each
 independent evaluation. The policy defaults remain RNG seed 0 and ten denoising
 steps; the client's evaluation seed is a separate setting.
 
-For all 50 tasks, use the [RoboTwin-PACE scheduler](../../RoboTwin-PACE/pace/README.md#evaluate-multiple-tasks),
+For all 50 tasks, use the [RoboTwin-PACE scheduler](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/README.md#evaluate-multiple-tasks),
 which starts and cleans up each server/client pair. Put
 `export OPENPI_DATA_HOME="$OPENPI_ROOT/local/cache"` in its `pace/configs/eval.env`
-along with your environment paths. See [result files](../../RoboTwin-PACE/pace/README.md#read-the-results)
+along with your environment paths. See [result files](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/README.md#read-the-results)
 for episode outcomes and logs.
 
 ## Checkpoint configuration details

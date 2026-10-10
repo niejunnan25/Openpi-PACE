@@ -1,4 +1,4 @@
-> **PACE model setup:** see [pace/README.md](pace/README.md) to install, download a checkpoint and run the official policy server. Start the complete evaluation workflow in RoboTwin-PACE.
+> **PACE model setup:** see [pace/README.md](pace/README.md) to install, download a checkpoint and run the official policy server. Start the complete evaluation workflow in [RoboTwin-PACE](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/README.md).
 
 # openpi
 
