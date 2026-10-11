@@ -1,41 +1,56 @@
 <h1 align="center">🤖 PACE</h1>
-<h3 align="center">面向动作分块机器人策略的<br>阶段感知动作块执行</h3>
-
-<p align="center"><strong>OpenPI-PACE</strong><br>各任务的 π₀.₅ 策略 &middot; 模型服务 &middot; 训练</p>
+<h3 align="center">Phase-Aware Chunk Execution for Robot Policies<br>with Action Chunking</h3>
 
 <p align="center">
-  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="论文 PDF" height="24"></a>
-  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/badge/Project-Website-blue" alt="项目主页" height="24"></a>
-  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=%F0%9F%A4%97%20Model&amp;message=HuggingFace&amp;color=yellow" alt="Hugging Face 模型" height="24"></a>
+  <strong>OpenPI-PACE</strong><br>
+  Task-specific π₀.₅ policies &middot; Model serving &middot; Training
 </p>
 
 <p align="center">
-  <a href="pace/media/overview.pdf"><img src="pace/media/overview.png" alt="PACE 总览：固定执行步数的敏感性、自适应执行预测动作块、仿真与真机结果，以及单条轨迹中执行步数的变化。" width="100%"></a>
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="Paper PDF" height="24"></a>
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/badge/Project-Website-blue" alt="Project website" height="24"></a>
+  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=%F0%9F%A4%97%20Model&amp;message=HuggingFace&amp;color=yellow" alt="Hugging Face models" height="24"></a>
 </p>
-<p align="center"><sub><strong>PACE 方法总览。</strong>根据预测动作中的运动变化，决定执行动作块的前多少步，再重新查询策略。点击图片可查看矢量 PDF。</sub></p>
 
-## ✨ 认识 OpenPI-PACE
+<p align="center">
+  <a href="pace/media/overview.pdf"><img src="pace/media/overview.png" alt="PACE overview: sensitivity to fixed execution horizons, adaptive action-chunk execution, simulation and real-robot results, and execution horizons along a trajectory." width="100%"></a>
+</p>
+<p align="center">
+  <sub><strong>PACE at a glance.</strong> Use motion changes in a predicted action chunk to decide how many steps to execute before querying the policy again.<br>Click the figure for the vector PDF.</sub>
+</p>
 
-本仓库在官方 [OpenPI](https://github.com/Physical-Intelligence/openpi) 上补充了 **50 个 RoboTwin 任务的 π₀.₅ 配置**，沿用其模型、训练和推理实现。
+## ✨ About OpenPI-PACE
+
+This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to official [OpenPI](https://github.com/Physical-Intelligence/openpi), using its model, training, and inference implementations.
 
 <a id="checkpoint-configuration-details"></a>
 
-- 🧩 **任务配置**：集中在 [configs.py](pace/src/openpi_pace/configs.py)，包括相机与动作格式、归一化资产及训练参数；训练和加载权重推理共用这些配置。
-- 🤖 **模型服务**：接收三路相机图像与 14 维状态，返回 **50 × 14 的绝对关节／夹爪指令**。
-- ⚡ **PACE 执行**：由 [RoboTwin-PACE](https://github.com/niejunnan25/RoboTwin-PACE#install-and-try-the-core) 根据预测动作选择执行步数，并完成仿真评估。
+- 🧩 **Task configurations** — [configs.py](pace/src/openpi_pace/configs.py) defines camera and action formats, normalization assets, and training settings. Training and checkpoint inference share these configurations.
+- 🤖 **Model serving** — three camera views and a 14-D state go in; **50 × 14 absolute joint/gripper commands** come out.
+- ⚡ **PACE execution** — [RoboTwin-PACE](https://github.com/niejunnan25/RoboTwin-PACE#install-and-try-the-core) selects execution horizons from the predicted actions and runs simulation evaluation.
 
-🧭 [接入配置](#install) · [准备权重](#download-a-checkpoint) · [启动服务](#serve-a-policy) · [训练模型](#training)
+<p align="center">
+  <a href="#install">Setup</a> ·
+  <a href="#download-a-checkpoint">Checkpoints</a> ·
+  <a href="#serve-a-policy">Model serving</a> ·
+  <a href="#training">Training</a> ·
+  <a href="#citation">Citation</a>
+</p>
 
 <a id="install"></a>
-## 🛠️ 接入 RoboTwin 任务配置
+## 🛠️ Add the RoboTwin task configurations
 
-使用 Linux、NVIDIA GPU 和 Python 3.11 或更高版本。**已有可运行的 OpenPI 时，可以继续使用原来的工作区、环境和缓存。** 应用下面的补丁即可加入任务配置及注册入口，同时包含通信适配和训练时的归一化统计路径修正。
+Use **Linux, an NVIDIA GPU, and Python 3.11 or newer**.
+
+**If OpenPI is already working, keep your existing workspace, environment, and cache.** The patch adds and registers the task configurations, adapts communication for simulation, and fixes the output path for normalization statistics during training.
 
 <a id="base-and-layout"></a>
-补丁基于官方 OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea) 生成并验证；其他版本需确认接口兼容。已使用本仓库的读者无需再应用补丁，直接准备权重即可。
+
+The patch was generated and validated against official OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea). Other versions require a compatibility check. If you already use this repository, skip the patch and proceed to the checkpoints.
 
 <a id="reuse-openpi"></a>
-在现有 OpenPI 根目录执行，下面以已有的 `.venv` 为例：
+
+From your existing OpenPI workspace, activate its environment; this example uses `.venv`:
 
 ```bash
 cd /path/to/openpi
@@ -46,13 +61,13 @@ git apply --check /tmp/openpi-robotwin.patch && git apply /tmp/openpi-robotwin.p
 uv pip install --no-deps -e .
 ```
 
-最后一条命令重新注册本地包，沿用现有依赖版本。[补丁](pace/patches/openpi-robotwin.patch)只加入必要改动，保留原有配置；若检查未通过，先核对当前版本与本地修改。
+The final command reinstalls the local package without changing runtime dependencies. The [patch](pace/patches/openpi-robotwin.patch) preserves existing configurations. If the check fails, review your OpenPI version and local changes before proceeding.
 
 <a id="new-openpi"></a>
 <details>
-<summary><strong>🌱 首次使用 OpenPI</strong></summary>
+<summary><strong>🌱 New to OpenPI? Install it here</strong></summary>
 
-先安装 [uv](https://docs.astral.sh/uv/getting-started/installation/)，再克隆本仓库。建议与 RoboTwin 工作区放在同级目录：
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clone this repository. We recommend placing it next to your RoboTwin workspace:
 
 ```bash
 git clone https://github.com/niejunnan25/Openpi-PACE.git OpenPI-PACE
@@ -63,18 +78,18 @@ GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 source .venv/bin/activate
 ```
 
-本仓库已包含任务配置和配套改动，无需应用上面的补丁。模型服务使用这里的 `.venv`，仿真使用 RoboTwin 的 Conda 环境。
+Task configurations and supporting changes are already included, so the patch above is not needed. The model server uses this `.venv`; simulation uses the RoboTwin Conda environment.
 
 </details>
 
-后续命令均在你正在使用的 OpenPI 工作区根目录、已激活的模型环境中执行；示例中的 `/path/to/openpi` 按实际位置替换。
+Run subsequent commands from your OpenPI workspace root with the model environment activated. Replace `/path/to/openpi` with its actual location.
 
 <a id="download-a-checkpoint"></a>
-## 📦 准备模型权重
+## 📦 Prepare checkpoints
 
-权重托管在 [niejunnan25/pi05-robotwin](https://huggingface.co/niejunnan25/pi05-robotwin)。每任务约 **12.4 GB**，任务名和文件清单见 [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json)。已有相同权重可直接复用；单任务评估只需下载对应任务，完整评估需要全部 50 个任务。
+Checkpoints are hosted at [niejunnan25/pi05-robotwin](https://huggingface.co/niejunnan25/pi05-robotwin). Each task is approximately **12.4 GB**; task names and files are listed in [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json). Reuse existing copies of the same checkpoints. A single-task evaluation needs only its checkpoint; a full evaluation needs all 50.
 
-以 `adjust_bottle` 为例，下载任务权重和共用分词器：
+For `adjust_bottle`, download the task checkpoint and shared tokenizer:
 
 ```bash
 huggingface-cli download niejunnan25/pi05-robotwin \
@@ -82,7 +97,7 @@ huggingface-cli download niejunnan25/pi05-robotwin \
   --local-dir local/pi05-robotwin
 ```
 
-将 `adjust_bottle/*` 替换为其他任务即可。下载后的任务目录应包含：
+Replace `adjust_bottle/*` to download a different task. The task directory should contain:
 
 ```text
 local/pi05-robotwin/adjust_bottle/
@@ -92,19 +107,22 @@ local/pi05-robotwin/adjust_bottle/
 
 <a id="local-assets"></a>
 <a id="use-existing-local-assets"></a>
-首次使用时，将分词器放入 OpenPI 默认缓存；已有该文件可跳过：
+
+For the first run, put the tokenizer in OpenPI's default cache. Skip this if it is already there:
 
 ```bash
 mkdir -p ~/.cache/openpi/big_vision
 cp local/pi05-robotwin/tokenizer.model ~/.cache/openpi/big_vision/paligemma_tokenizer.model
 ```
 
-已有自定义缓存时，继续使用 `OPENPI_DATA_HOME`，分词器位于该目录的 `big_vision/paligemma_tokenizer.model`。每个任务使用第 **30,000** 步的 EMA 权重及其配套归一化统计；保留 `params/` 和 `assets/` 完整即可，评估无需训练数据、参数转换或重新计算归一化。
+For a custom cache, keep using `OPENPI_DATA_HOME`; the tokenizer belongs at `big_vision/paligemma_tokenizer.model` within that directory.
+
+Each task uses its **EMA checkpoint at training step 30,000** and matching normalization statistics. Keep `params/` and `assets/` intact. Evaluation does not require training data, parameter conversion, or recomputing normalization statistics.
 
 <a id="serve-a-policy"></a>
-## 🚀 启动模型服务
+## 🚀 Start the model server
 
-使用 OpenPI 原有的服务入口，指定任务配置和权重路径：
+Use OpenPI's standard serving entry point with the task configuration and checkpoint path:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 XLA_PYTHON_CLIENT_MEM_FRACTION=0.2 \
@@ -113,23 +131,23 @@ python scripts/serve_policy.py --port 8000 policy:checkpoint \
   --policy.dir local/pi05-robotwin/adjust_bottle
 ```
 
-这里使用 GPU 0、端口 8000。切换任务时，同时修改 `--policy.config` 和 `--policy.dir`。首次推理需要等待 XLA 编译。
+This uses GPU 0 and port 8000. To switch tasks, update both `--policy.config` and `--policy.dir`. The first inference requires XLA compilation.
 
-保持服务运行，在另一个终端的 **RoboTwin Conda 环境**中，安装当前 OpenPI 工作区的通信客户端：
+Keep the server running. In another terminal, install the communication client from your OpenPI workspace **inside the RoboTwin Conda environment**:
 
 ```bash
 conda activate RoboTwin
 python -m pip install -e /path/to/openpi/packages/openpi-client
 ```
 
-然后按 [RoboTwin-PACE 单任务示例](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task)启动仿真评估，使用相同的任务和端口。每次评估 100 回合；完成后用 Ctrl-C 停止服务，下一次评估重新启动。**PACE 或 Fixed 由客户端选择**，服务端始终返回完整动作块。
+Then follow the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task), using the same task and port. Each evaluation runs 100 episodes. Stop the server with Ctrl-C after evaluation and start a fresh server for the next run. **The client selects PACE or Fixed**; the server always returns the full action chunk.
 
-运行全部 50 个任务时，使用 [RoboTwin-PACE 批量评测脚本](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks)，由它自动管理模型服务。复用已有 OpenPI 工作区时，将 `eval.env` 中的 `OPENPI_ROOT`、`SERVER_PYTHON` 和 `CHECKPOINT_ROOT` 指向实际路径。
+For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks), which manages model servers automatically. When reusing an existing OpenPI workspace, point `OPENPI_ROOT`, `SERVER_PYTHON`, and `CHECKPOINT_ROOT` in `eval.env` to your actual paths.
 
 <a id="training"></a>
-## 🏋️ 训练自己的模型
+## 🏋️ Train your own model
 
-准备 LeRobot 格式的 RoboTwin 演示数据，按 `robotwin/<task>` 放在数据集根目录下。例如，`adjust_bottle` 的路径为 `/path/to/datasets/robotwin/adjust_bottle`。在 OpenPI 模型环境中执行：
+Prepare RoboTwin demonstrations in LeRobot format under `robotwin/<task>` in your dataset root. For example, place `adjust_bottle` at `/path/to/datasets/robotwin/adjust_bottle`. Run these commands in the OpenPI model environment:
 
 ```bash
 export HF_LEROBOT_HOME="/path/to/datasets"
@@ -137,9 +155,27 @@ python scripts/compute_norm_stats.py --config-name pi05_robotwin_adjust_bottle
 python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
 ```
 
-发布配置采用每任务 50 条 `demo_clean` 演示、batch size 32、训练 seed 42，进行 π₀.₅ 全参数微调。训练资产与权重保存在 `pace/runs/`，评估使用第 30,000 步的权重。这里重新计算归一化统计用于训练新模型；评估已发布模型时直接使用其配套文件。
+The released setup uses 50 `demo_clean` demonstrations per task, batch size 32, and training seed 42 for full-parameter π₀.₅ fine-tuning. Training assets and checkpoints are written to `pace/runs/`; evaluation uses the step-30,000 checkpoint.
+
+Recompute normalization statistics when training a new model. For released checkpoints, use the statistics shipped with the weights.
+
+<a id="citation"></a>
+## 📝 Citation
+
+If you use PACE in your research, please cite our paper, accepted at **NeurIPS 2026**:
+
+```bibtex
+@inproceedings{nie2026pace,
+  title     = {{PACE}: Phase-Aware Chunk Execution for Robot Policies with Action Chunking},
+  author    = {Nie, Junnan and Li, Jiayi and Zhang, Jiachen and Lao, Junyi and
+               Liu, Chenghao and Zhang, Tianle and Huang, Songfang},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026},
+  note      = {To appear}
+}
+```
 
 <a id="acknowledgments-and-license"></a>
-## 🤝 致谢与许可证
+## 🤝 Acknowledgments and license
 
-感谢 Physical Intelligence 的 [OpenPI](https://github.com/Physical-Intelligence/openpi) 和 [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin) 作者。本仓库代码采用 [Apache-2.0 许可证](LICENSE)，附带组件保留各自许可证；模型和分词器的许可条款见模型仓库的 `TERMS.md` 与 `NOTICE`。
+We thank the authors of Physical Intelligence's [OpenPI](https://github.com/Physical-Intelligence/openpi) and [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin). This repository uses the [Apache-2.0 License](LICENSE); bundled components retain their respective licenses. Model and tokenizer terms are provided in the model repository's `TERMS.md` and `NOTICE`.
