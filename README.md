@@ -34,13 +34,14 @@ GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 source .venv/bin/activate
 ```
 
-如果已按 RoboTwin-PACE 指南克隆仓库，请从 `cd /path/to/OpenPI-PACE` 开始，跳过上面的克隆命令。显式指定的本地目录名与配套指南和调度器默认路径一致。
+如果已按 RoboTwin-PACE 指南获取仓库，请从 `cd /path/to/OpenPI-PACE` 开始，跳过上面的克隆命令。显式指定的本地目录名与配套指南和调度器默认路径一致。
 
 请从本仓库安装，以便官方服务入口能够导入 `openpi_pace` 及其 50 个任务配置。依赖版本由上游锁文件固定。其他平台细节见[上游安装说明](https://github.com/Physical-Intelligence/openpi/blob/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea/README.md#installation)。
 
-在另一个 **RoboTwin 环境**中安装客户端软件包：
+在另一个终端，激活已有的 **RoboTwin Conda 环境**并安装轻量客户端（已按 RoboTwin-PACE 指南安装过可跳过；环境名按实际替换）：
 
 ```bash
+conda activate RoboTwin
 python -m pip install -e /path/to/OpenPI-PACE/packages/openpi-client
 ```
 
@@ -68,12 +69,14 @@ local/pi05-robotwin/
     assets/robotwin/norm_stats.json
 ```
 
-将分词器放到官方服务期望的缓存位置：
+分词器使用 OpenPI 默认缓存 `~/.cache/openpi`，无需设置额外环境变量；已有该文件时可直接复用：
 
 ```bash
-mkdir -p local/cache/big_vision
-cp local/pi05-robotwin/tokenizer.model local/cache/big_vision/paligemma_tokenizer.model
+mkdir -p ~/.cache/openpi/big_vision
+cp local/pi05-robotwin/tokenizer.model ~/.cache/openpi/big_vision/paligemma_tokenizer.model
 ```
+
+如果已有自定义缓存，继续使用原来的 `OPENPI_DATA_HOME` 设置，并将分词器放在该目录下的 `big_vision/paligemma_tokenizer.model`。
 
 每个任务的 `params/` 和已保存的归一化统计应一起保留，无需转换参数或重新计算归一化统计。模型与分词器的许可条款见下载的 `TERMS.md` 和 `NOTICE`。
 
@@ -83,26 +86,26 @@ cp local/pi05-robotwin/tokenizer.model local/cache/big_vision/paligemma_tokenize
 在 OpenPI-PACE 根目录，激活其 Python 环境后运行：
 
 ```bash
-OPENPI_DATA_HOME="$PWD/local/cache" \
 CUDA_VISIBLE_DEVICES=0 XLA_PYTHON_CLIENT_MEM_FRACTION=0.2 \
 python scripts/serve_policy.py --port 8000 policy:checkpoint \
   --policy.config pi05_robotwin_adjust_bottle \
   --policy.dir local/pi05-robotwin/adjust_bottle
 ```
 
-`--policy.config` 选择任务配置，`--policy.dir` 指向该任务的权重与归一化统计。`CUDA_VISIBLE_DEVICES` 选择模型使用的 GPU，`OPENPI_DATA_HOME` 指向前面准备的分词器缓存。显存占比设置与原调度器一致；每张 GPU 能容纳多少组服务端／客户端取决于可用显存。首次推理可能需要先编译 XLA 内核，再生成动作。
+`--policy.config` 选择任务配置，`--policy.dir` 指向该任务的权重与归一化统计。`CUDA_VISIBLE_DEVICES` 选择模型使用的 GPU。`XLA_PYTHON_CLIENT_MEM_FRACTION=0.2` 是 OpenPI/JAX 的显存占比设置，与原调度器一致；每张 GPU 能容纳多少组服务端／客户端取决于可用显存。首次推理可能需要先编译 XLA 内核，再生成动作。
 
-在第二个终端激活 **RoboTwin 环境**，进入 **RoboTwin-PACE** 运行：
+在第二个终端激活已有的 **RoboTwin Conda 环境**，进入已加入 `pace/` 的 RoboTwin 工作区运行（也可以是完整克隆的 RoboTwin-PACE）：
 
 ```bash
-cd /path/to/RoboTwin-PACE
+conda activate RoboTwin
+cd /path/to/RoboTwin
 python pace/scripts/evaluate.py \
   --task adjust_bottle --method pace --gpu 0 --seed 0 --port 8000
 ```
 
 任务名和端口必须与服务端一致。这条命令评估 **100 个回合**。单独评估 Fixed H=25 时，使用 `--method fixed --horizon 25`。每次评估结束后，用 Ctrl-C 停止服务，并为下一次评估重新启动服务。策略的默认随机数 seed 为 0，去噪步数为 10；客户端的评估 seed 是另一项独立设置。
 
-评估全部 50 个任务时，请使用 [RoboTwin-PACE 调度器](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks)，由它负责启动和清理各组服务端／客户端。在其 `pace/configs/eval.env` 中设置环境路径，并加入 `export OPENPI_DATA_HOME="$OPENPI_ROOT/local/cache"`。回合结果和日志见[结果文件说明](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#read-the-results)。
+评估全部 50 个任务时，请使用 [RoboTwin-PACE 调度器](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks)，由它负责启动和清理各组服务端／客户端。按指南在 `pace/configs/eval.env` 中指定 RoboTwin Conda 环境的 Python 路径；同级目录布局下，其余路径可沿用默认值。只有使用自定义分词器缓存时，才需要保留对应的 `OPENPI_DATA_HOME` 设置。回合结果和日志见[结果文件说明](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#read-the-results)。
 
 <a id="checkpoint-configuration-details"></a>
 ## ⚙️ 模型配置说明
