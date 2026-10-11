@@ -142,7 +142,7 @@ python -m pip install -e /path/to/openpi/packages/openpi-client
 
 Then follow the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task), using the same task and port. Each evaluation runs 100 episodes. Stop the server with Ctrl-C after evaluation and start a fresh server for the next run. **The client selects PACE or Fixed**; the server always returns the full action chunk.
 
-For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks), which manages model servers automatically. When reusing an existing OpenPI workspace, point `OPENPI_ROOT`, `SERVER_PYTHON`, and `CHECKPOINT_ROOT` in `eval.env` to your actual paths.
+For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks), which manages model servers automatically. When reusing an existing OpenPI workspace, set `OPENPI_ROOT`, `SERVER_PYTHON`, and `CHECKPOINT_ROOT` at the top of [`pace/scripts/eval_all.sh`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval_all.sh) to match your workspace, model environment, and checkpoint directory.
 
 <a id="training"></a>
 ## 🏋️ Train your own model
