@@ -1,6 +1,6 @@
 <h1 align="center">PACE: Phase-Aware Chunk Execution<br>for Robot Policies with Action Chunking</h1>
 
-<p align="center">NeurIPS 2026</p>
+<h3 align="center">NeurIPS 2026</h3>
 
 <p align="center">
   <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="Paper PDF" height="24"></a>
