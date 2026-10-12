@@ -1,12 +1,6 @@
-<h1 align="center">🤖 PACE</h1>
-<h3 align="center">Phase-Aware Chunk Execution for Robot Policies<br>with Action Chunking</h3>
+<h1 align="center">PACE: Phase-Aware Chunk Execution<br>for Robot Policies with Action Chunking</h1>
 
-<p align="center"><strong>🎉 Accepted at NeurIPS 2026</strong></p>
-
-<p align="center">
-  <strong>OpenPI-PACE</strong><br>
-  Task-specific π₀.₅ policies &middot; Model serving &middot; Training
-</p>
+<p align="center">NeurIPS 2026</p>
 
 <p align="center">
   <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="Paper PDF" height="24"></a>
