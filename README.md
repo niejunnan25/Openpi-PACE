@@ -34,8 +34,6 @@ This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to offic
   <a href="#citation">Citation</a>
 </p>
 
-<br>
-
 <a id="install"></a>
 
 ## 🛠️ Set up OpenPI
@@ -86,8 +84,6 @@ The model server uses this `.venv`. Simulation runs in the RoboTwin Conda enviro
 
 Run the following commands from your OpenPI workspace with its environment active. Replace `/path/to/openpi` with your workspace path.
 
-<br>
-
 <a id="download-a-checkpoint"></a>
 
 ## 📦 Prepare checkpoints
@@ -130,8 +126,6 @@ Each task uses its **EMA checkpoint at training step 30,000** and matching norma
 
 These checkpoints are ready for evaluation: no training data, parameter conversion, or recomputing normalization statistics are needed.
 
-<br>
-
 <a id="serve-a-policy"></a>
 
 ## 🚀 Start the model server
@@ -166,8 +160,6 @@ In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/ni
 
 Use `server_python: .venv/bin/python` for a standard installation, or enter the full path to your model environment's Python interpreter.
 
-<br>
-
 <a id="training"></a>
 
 ## 🏋️ Train your own model
@@ -189,8 +181,6 @@ Training assets and checkpoints are written to `pace/runs/`; evaluation uses the
 
 Recompute normalization statistics when training a new model. For released checkpoints, use the statistics shipped with the weights.
 
-<br>
-
 <a id="citation"></a>
 
 ## 📝 Citation
@@ -207,8 +197,6 @@ If you use PACE in your research, please cite our paper, accepted at **NeurIPS 2
   note      = {To appear}
 }
 ```
-
-<br>
 
 <a id="acknowledgments-and-license"></a>
 
