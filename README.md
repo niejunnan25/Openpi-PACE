@@ -15,10 +15,6 @@
 <p align="center">
   <a href="pace/media/overview.pdf"><img src="pace/media/overview.png" alt="PACE overview: sensitivity to fixed execution horizons, adaptive action-chunk execution, simulation and real-robot results, and execution horizons along a trajectory." width="100%"></a>
 </p>
-<p align="center">
-  <sub><strong>PACE at a glance.</strong> Use motion changes in a predicted action chunk to decide how many steps to execute before querying the policy again.<br>Click the figure for the vector PDF.</sub>
-</p>
-
 ## ✨ About OpenPI-PACE
 
 This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to official [OpenPI](https://github.com/Physical-Intelligence/openpi), using its model, training, and inference implementations.
@@ -38,19 +34,21 @@ This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to offic
 </p>
 
 <a id="install"></a>
-## 🛠️ Add the RoboTwin task configurations
+## 🛠️ Set up OpenPI
 
 Use **Linux, an NVIDIA GPU, and Python 3.11 or newer**.
 
-**If OpenPI is already working, keep your existing workspace, environment, and cache.** The patch adds and registers the task configurations, adapts communication for simulation, and fixes the output path for normalization statistics during training.
+If OpenPI-PACE is already installed, skip to the checkpoints.
 
 <a id="base-and-layout"></a>
 
-The patch was generated and validated against official OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea). Other versions require a compatibility check. If you already use this repository, skip the patch and proceed to the checkpoints.
+For an existing OpenPI workspace, use the [RoboTwin integration patch](pace/patches/openpi-robotwin.patch). It adds and registers the task configurations, includes them in the package, and updates WebSocket handling and normalization-statistics output paths.
+
+The patch was validated against official OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea).
 
 <a id="reuse-openpi"></a>
 
-From your existing OpenPI workspace, activate its environment; this example uses `.venv`:
+Activate your OpenPI environment and apply the patch (`.venv` below):
 
 ```bash
 cd /path/to/openpi
@@ -61,13 +59,11 @@ git apply --check /tmp/openpi-robotwin.patch && git apply /tmp/openpi-robotwin.p
 uv pip install --no-deps -e .
 ```
 
-The final command reinstalls the local package without changing runtime dependencies. The [patch](pace/patches/openpi-robotwin.patch) preserves existing configurations. If the check fails, review your OpenPI version and local changes before proceeding.
-
 <a id="new-openpi"></a>
 <details>
 <summary><strong>🌱 New to OpenPI? Install it here</strong></summary>
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clone this repository. We recommend placing it next to your RoboTwin workspace:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clone OpenPI-PACE next to your RoboTwin workspace:
 
 ```bash
 git clone https://github.com/niejunnan25/Openpi-PACE.git OpenPI-PACE
@@ -78,16 +74,18 @@ GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 source .venv/bin/activate
 ```
 
-Task configurations and supporting changes are already included, so the patch above is not needed. The model server uses this `.venv`; simulation uses the RoboTwin Conda environment.
+The model server uses this `.venv`. Simulation runs in the RoboTwin Conda environment.
 
 </details>
 
-Run subsequent commands from your OpenPI workspace root with the model environment activated. Replace `/path/to/openpi` with its actual location.
+Run the following commands from your OpenPI workspace with its environment active. Replace `/path/to/openpi` with your workspace path.
 
 <a id="download-a-checkpoint"></a>
 ## 📦 Prepare checkpoints
 
-Checkpoints are hosted at [niejunnan25/pi05-robotwin](https://huggingface.co/niejunnan25/pi05-robotwin). Each task is approximately **12.4 GB**; task names and files are listed in [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json). Reuse existing copies of the same checkpoints. A single-task evaluation needs only its checkpoint; a full evaluation needs all 50.
+Checkpoints are available on [Hugging Face](https://huggingface.co/niejunnan25/pi05-robotwin), at about **12.4 GB per task**. Task names and files are listed in [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json).
+
+One task needs one checkpoint; the full evaluation needs all 50. Reuse existing copies of the same checkpoints.
 
 For `adjust_bottle`, download the task checkpoint and shared tokenizer:
 
@@ -117,7 +115,9 @@ cp local/pi05-robotwin/tokenizer.model ~/.cache/openpi/big_vision/paligemma_toke
 
 For a custom cache, keep using `OPENPI_DATA_HOME`; the tokenizer belongs at `big_vision/paligemma_tokenizer.model` within that directory.
 
-Each task uses its **EMA checkpoint at training step 30,000** and matching normalization statistics. Keep `params/` and `assets/` intact. Evaluation does not require training data, parameter conversion, or recomputing normalization statistics.
+Each task uses its **EMA checkpoint at training step 30,000** and matching normalization statistics. Keep `params/` and `assets/` together.
+
+These checkpoints are ready for evaluation: no training data, parameter conversion, or recomputing normalization statistics are needed.
 
 <a id="serve-a-policy"></a>
 ## 🚀 Start the model server
@@ -140,9 +140,15 @@ conda activate RoboTwin
 python -m pip install -e /path/to/openpi/packages/openpi-client
 ```
 
-Then follow the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task), using the same task and port. Each evaluation runs 100 episodes. Stop the server with Ctrl-C after evaluation and start a fresh server for the next run. **The client selects PACE or Fixed**; the server always returns the full action chunk.
+Run the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task) with the same task and port. Each evaluation runs 100 episodes.
 
-For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks), which manages model servers automatically. Edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval.yaml), next to the batch script in your RoboTwin workspace: set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the downloaded task checkpoints. Keep `server_python: .venv/bin/python` for a standard OpenPI installation, or enter the full path to your existing model environment's Python interpreter.
+The client selects PACE or Fixed; the server returns the full action chunk. Stop the server with Ctrl-C after each run and start a fresh server for the next one.
+
+For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks). It manages model servers automatically.
+
+In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval.yaml): set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the task checkpoints.
+
+Use `server_python: .venv/bin/python` for a standard installation, or enter the full path to your model environment's Python interpreter.
 
 <a id="training"></a>
 ## 🏋️ Train your own model
@@ -155,7 +161,9 @@ python scripts/compute_norm_stats.py --config-name pi05_robotwin_adjust_bottle
 python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
 ```
 
-The released setup uses 50 `demo_clean` demonstrations per task, batch size 32, and training seed 42 for full-parameter π₀.₅ fine-tuning. Training assets and checkpoints are written to `pace/runs/`; evaluation uses the step-30,000 checkpoint.
+The released setup uses 50 `demo_clean` demonstrations per task, batch size 32, and training seed 42 for full-parameter π₀.₅ fine-tuning.
+
+Training assets and checkpoints are written to `pace/runs/`; evaluation uses the step-30,000 checkpoint.
 
 Recompute normalization statistics when training a new model. For released checkpoints, use the statistics shipped with the weights.
 
@@ -178,4 +186,6 @@ If you use PACE in your research, please cite our paper, accepted at **NeurIPS 2
 <a id="acknowledgments-and-license"></a>
 ## 🤝 Acknowledgments and license
 
-We thank the authors of Physical Intelligence's [OpenPI](https://github.com/Physical-Intelligence/openpi) and [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin). This repository uses the [Apache-2.0 License](LICENSE); bundled components retain their respective licenses. Model and tokenizer terms are provided in the model repository's `TERMS.md` and `NOTICE`.
+Thanks to the [OpenPI](https://github.com/Physical-Intelligence/openpi) and [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin) teams for their open-source work.
+
+This repository uses the [Apache-2.0 License](LICENSE); bundled components retain their respective licenses. Model and tokenizer terms are provided in the model repository's `TERMS.md` and `NOTICE`.
