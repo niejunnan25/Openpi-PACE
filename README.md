@@ -18,11 +18,13 @@
 
 ## ✨ About OpenPI-PACE
 
-This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to official [OpenPI](https://github.com/Physical-Intelligence/openpi), using its model, training, and inference implementations.
+This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to official [OpenPI](https://github.com/Physical-Intelligence/openpi).<br>
+It uses OpenPI’s model, training, and inference implementations.
 
 <a id="checkpoint-configuration-details"></a>
 
-- 🧩 **Task configurations** — [configs.py](pace/src/openpi_pace/configs.py) defines camera and action formats, normalization assets, and training settings. Training and checkpoint inference share these configurations.
+- 🧩 **Task configurations** — [configs.py](pace/src/openpi_pace/configs.py) defines camera and action formats, normalization assets, and training settings.<br>
+  Training and checkpoint inference share these configurations.
 - 🤖 **Model serving** — three camera views and a 14-D state go in; **50 × 14 absolute joint/gripper commands** come out.
 - ⚡ **PACE execution** — [RoboTwin-PACE](https://github.com/niejunnan25/RoboTwin-PACE#install-and-try-the-core) selects execution horizons from the predicted actions and runs simulation evaluation.
 
@@ -38,37 +40,34 @@ This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to offic
 
 ## 🛠️ Set up OpenPI
 
-Use **Linux, an NVIDIA GPU, and Python 3.11 or newer**.
-
-If OpenPI-PACE is already installed, skip to the checkpoints.
-
 <a id="base-and-layout"></a>
-
-For an existing OpenPI workspace, use the [RoboTwin integration patch](pace/patches/openpi-robotwin.patch).
-
-It adds and registers the task configurations, includes them in the package, and updates WebSocket handling and normalization-statistics output paths.
-
-The patch was validated against official OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea).
-
 <a id="reuse-openpi"></a>
 
-Activate your OpenPI environment and apply the patch (`.venv` below):
+If you already use OpenPI, apply the [RoboTwin integration patch](pace/patches/openpi-robotwin.patch).<br>
+It adds the 50 task configurations and model-serving adaptations for RoboTwin:
 
 ```bash
 cd /path/to/openpi
 source .venv/bin/activate
 
-curl -fL https://raw.githubusercontent.com/niejunnan25/Openpi-PACE/main/pace/patches/openpi-robotwin.patch \
+curl -fL \
+  https://raw.githubusercontent.com/niejunnan25/Openpi-PACE/main/pace/patches/openpi-robotwin.patch \
   -o /tmp/openpi-robotwin.patch
 
-git apply --check /tmp/openpi-robotwin.patch && git apply /tmp/openpi-robotwin.patch
+git apply --check /tmp/openpi-robotwin.patch && \
+  git apply /tmp/openpi-robotwin.patch
 uv pip install --no-deps -e .
 ```
+
+OpenPI-PACE already includes this patch.<br>
+Validated against [official OpenPI 2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea).
 
 <a id="new-openpi"></a>
 
 <details>
 <summary><strong>🌱 New to OpenPI? Install it here</strong></summary>
+
+Use **Linux, an NVIDIA GPU, and Python 3.11 or newer**.
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clone OpenPI-PACE next to your RoboTwin workspace:
 
@@ -127,7 +126,8 @@ cp local/pi05-robotwin/tokenizer.model ~/.cache/openpi/big_vision/paligemma_toke
 
 For a custom cache, keep using `OPENPI_DATA_HOME`; the tokenizer belongs at `big_vision/paligemma_tokenizer.model` within that directory.
 
-Each task uses its **EMA checkpoint at training step 30,000** and matching normalization statistics. Keep `params/` and `assets/` together.
+Each task uses its **EMA checkpoint at training step 30,000** and matching normalization statistics.<br>
+Keep `params/` and `assets/` together.
 
 These checkpoints are ready for evaluation: no training data, parameter conversion, or recomputing normalization statistics are needed.
 
@@ -144,9 +144,11 @@ python scripts/serve_policy.py --port 8000 policy:checkpoint \
   --policy.dir local/pi05-robotwin/adjust_bottle
 ```
 
-This uses GPU 0 and port 8000. To switch tasks, update both `--policy.config` and `--policy.dir`. The first inference requires XLA compilation.
+This uses GPU 0 and port 8000.<br>
+To switch tasks, update both `--policy.config` and `--policy.dir`. The first inference requires XLA compilation.
 
-Keep the server running. In another terminal, install the communication client from your OpenPI workspace **inside the RoboTwin Conda environment**:
+Keep the server running.<br>
+In another terminal, install the communication client from your OpenPI workspace **inside the RoboTwin Conda environment**:
 
 ```bash
 conda activate RoboTwin
@@ -161,7 +163,8 @@ Stop the server with Ctrl-C after each run and start a fresh server for the next
 
 For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks). It manages model servers automatically.
 
-In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval.yaml): set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the task checkpoints.
+In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval.yaml):<br>
+Set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the task checkpoints.
 
 Use `server_python: .venv/bin/python` for a standard installation, or enter the full path to your model environment's Python interpreter.
 
@@ -169,7 +172,8 @@ Use `server_python: .venv/bin/python` for a standard installation, or enter the 
 
 ## 🏋️ Train your own model
 
-Prepare RoboTwin demonstrations in LeRobot format under `robotwin/<task>` in your dataset root. For example, place `adjust_bottle` at `/path/to/datasets/robotwin/adjust_bottle`.
+Prepare RoboTwin demonstrations in LeRobot format under `robotwin/<task>` in your dataset root.<br>
+For example, place `adjust_bottle` at `/path/to/datasets/robotwin/adjust_bottle`.
 
 Run these commands in the OpenPI model environment:
 
