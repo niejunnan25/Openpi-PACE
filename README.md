@@ -15,6 +15,7 @@
 <p align="center">
   <a href="pace/media/overview.pdf"><img src="pace/media/overview.png" alt="PACE overview: sensitivity to fixed execution horizons, adaptive action-chunk execution, simulation and real-robot results, and execution horizons along a trajectory." width="100%"></a>
 </p>
+
 ## ✨ About OpenPI-PACE
 
 This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to official [OpenPI](https://github.com/Physical-Intelligence/openpi), using its model, training, and inference implementations.
@@ -34,6 +35,7 @@ This repository adds **π₀.₅ configurations for 50 RoboTwin tasks** to offic
 </p>
 
 <a id="install"></a>
+
 ## 🛠️ Set up OpenPI
 
 Use **Linux, an NVIDIA GPU, and Python 3.11 or newer**.
@@ -42,7 +44,9 @@ If OpenPI-PACE is already installed, skip to the checkpoints.
 
 <a id="base-and-layout"></a>
 
-For an existing OpenPI workspace, use the [RoboTwin integration patch](pace/patches/openpi-robotwin.patch). It adds and registers the task configurations, includes them in the package, and updates WebSocket handling and normalization-statistics output paths.
+For an existing OpenPI workspace, use the [RoboTwin integration patch](pace/patches/openpi-robotwin.patch).
+
+It adds and registers the task configurations, includes them in the package, and updates WebSocket handling and normalization-statistics output paths.
 
 The patch was validated against official OpenPI [2b1f377](https://github.com/Physical-Intelligence/openpi/tree/2b1f3779ec2e3ddb56fd1425944e5b3d084c28ea).
 
@@ -53,13 +57,16 @@ Activate your OpenPI environment and apply the patch (`.venv` below):
 ```bash
 cd /path/to/openpi
 source .venv/bin/activate
+
 curl -fL https://raw.githubusercontent.com/niejunnan25/Openpi-PACE/main/pace/patches/openpi-robotwin.patch \
   -o /tmp/openpi-robotwin.patch
+
 git apply --check /tmp/openpi-robotwin.patch && git apply /tmp/openpi-robotwin.patch
 uv pip install --no-deps -e .
 ```
 
 <a id="new-openpi"></a>
+
 <details>
 <summary><strong>🌱 New to OpenPI? Install it here</strong></summary>
 
@@ -68,9 +75,11 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clon
 ```bash
 git clone https://github.com/niejunnan25/Openpi-PACE.git OpenPI-PACE
 cd OpenPI-PACE
+
 git submodule update --init --recursive
 GIT_LFS_SKIP_SMUDGE=1 uv sync
 GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
+
 source .venv/bin/activate
 ```
 
@@ -81,9 +90,12 @@ The model server uses this `.venv`. Simulation runs in the RoboTwin Conda enviro
 Run the following commands from your OpenPI workspace with its environment active. Replace `/path/to/openpi` with your workspace path.
 
 <a id="download-a-checkpoint"></a>
+
 ## 📦 Prepare checkpoints
 
-Checkpoints are available on [Hugging Face](https://huggingface.co/niejunnan25/pi05-robotwin), at about **12.4 GB per task**. Task names and files are listed in [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json).
+Checkpoints are available on [Hugging Face](https://huggingface.co/niejunnan25/pi05-robotwin), at about **12.4 GB per task**.
+
+Task names and files are listed in [manifest.json](https://huggingface.co/niejunnan25/pi05-robotwin/blob/main/manifest.json).
 
 One task needs one checkpoint; the full evaluation needs all 50. Reuse existing copies of the same checkpoints.
 
@@ -120,6 +132,7 @@ Each task uses its **EMA checkpoint at training step 30,000** and matching norma
 These checkpoints are ready for evaluation: no training data, parameter conversion, or recomputing normalization statistics are needed.
 
 <a id="serve-a-policy"></a>
+
 ## 🚀 Start the model server
 
 Use OpenPI's standard serving entry point with the task configuration and checkpoint path:
@@ -142,7 +155,9 @@ python -m pip install -e /path/to/openpi/packages/openpi-client
 
 Run the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task) with the same task and port. Each evaluation runs 100 episodes.
 
-The client selects PACE or Fixed; the server returns the full action chunk. Stop the server with Ctrl-C after each run and start a fresh server for the next one.
+The client selects PACE or Fixed; the server returns the full action chunk.
+
+Stop the server with Ctrl-C after each run and start a fresh server for the next one.
 
 For all 50 tasks, use the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks). It manages model servers automatically.
 
@@ -151,12 +166,16 @@ In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/ni
 Use `server_python: .venv/bin/python` for a standard installation, or enter the full path to your model environment's Python interpreter.
 
 <a id="training"></a>
+
 ## 🏋️ Train your own model
 
-Prepare RoboTwin demonstrations in LeRobot format under `robotwin/<task>` in your dataset root. For example, place `adjust_bottle` at `/path/to/datasets/robotwin/adjust_bottle`. Run these commands in the OpenPI model environment:
+Prepare RoboTwin demonstrations in LeRobot format under `robotwin/<task>` in your dataset root. For example, place `adjust_bottle` at `/path/to/datasets/robotwin/adjust_bottle`.
+
+Run these commands in the OpenPI model environment:
 
 ```bash
 export HF_LEROBOT_HOME="/path/to/datasets"
+
 python scripts/compute_norm_stats.py --config-name pi05_robotwin_adjust_bottle
 python scripts/train.py pi05_robotwin_adjust_bottle --exp-name paper
 ```
@@ -168,6 +187,7 @@ Training assets and checkpoints are written to `pace/runs/`; evaluation uses the
 Recompute normalization statistics when training a new model. For released checkpoints, use the statistics shipped with the weights.
 
 <a id="citation"></a>
+
 ## 📝 Citation
 
 If you use PACE in your research, please cite our paper, accepted at **NeurIPS 2026**:
@@ -184,8 +204,11 @@ If you use PACE in your research, please cite our paper, accepted at **NeurIPS 2
 ```
 
 <a id="acknowledgments-and-license"></a>
+
 ## 🤝 Acknowledgments and license
 
 Thanks to the [OpenPI](https://github.com/Physical-Intelligence/openpi) and [RoboTwin](https://github.com/RoboTwin-Platform/RoboTwin) teams for their open-source work.
 
-This repository uses the [Apache-2.0 License](LICENSE); bundled components retain their respective licenses. Model and tokenizer terms are provided in the model repository's `TERMS.md` and `NOTICE`.
+This repository uses the [Apache-2.0 License](LICENSE); bundled components retain their respective licenses.
+
+Model and tokenizer terms are provided in the model repository's `TERMS.md` and `NOTICE`.
