@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=Paper&amp;message=PDF&amp;color=red&amp;logo=arxiv&amp;logoColor=white" alt="Paper PDF" height="24"></a>
-  <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/badge/Project-Website-blue" alt="Project website" height="24"></a>
+  <a href="https://niejunnan25.github.io/pace-project/"><img src="https://img.shields.io/badge/Project-Website-blue" alt="Project website" height="24"></a>
   <a href="https://huggingface.co/niejunnan25/pi05-robotwin"><img src="https://img.shields.io/static/v1?label=%F0%9F%A4%97%20Model&amp;message=HuggingFace&amp;color=yellow" alt="Hugging Face models" height="24"></a>
 </p>
 
@@ -16,7 +16,13 @@
 
 The model takes three camera views and a 14-D robot state and returns 50 × 14 absolute joint and gripper commands. [PACE](https://github.com/niejunnan25/PACE#install-and-try-the-core) selects execution horizons from these predictions and runs the simulation evaluation.
 
-[Installation](#install) · [Checkpoints](#download-a-checkpoint) · [Model serving](#serve-a-policy) · [Training](#training) · [Citation](#citation)
+<p align="center">
+  <a href="#install">Installation</a> ·
+  <a href="#download-a-checkpoint">Checkpoints</a> ·
+  <a href="#serve-a-policy">Model serving</a> ·
+  <a href="#training">Training</a> ·
+  <a href="#citation">Citation</a>
+</p>
 
 <a id="install"></a><a id="base-and-layout"></a><a id="reuse-openpi"></a>
 
