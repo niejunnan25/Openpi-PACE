@@ -14,7 +14,7 @@
 
 <a id="checkpoint-configuration-details"></a>OpenPI-PACE extends [OpenPI](https://github.com/Physical-Intelligence/openpi) with π₀.₅ configurations for all 50 RoboTwin tasks used in PACE. Training and inference use the upstream implementations and share the same [task configurations](pace/src/openpi_pace/configs.py), which specify camera inputs, action formats, normalization assets, and training settings.
 
-The model takes three camera views and a 14-D robot state and returns 50 × 14 absolute joint and gripper commands. [RoboTwin-PACE](https://github.com/niejunnan25/RoboTwin-PACE#install-and-try-the-core) selects execution horizons from these predictions and runs the simulation evaluation.
+The model takes three camera views and a 14-D robot state and returns 50 × 14 absolute joint and gripper commands. [PACE](https://github.com/niejunnan25/PACE#install-and-try-the-core) selects execution horizons from these predictions and runs the simulation evaluation.
 
 [Installation](#install) · [Checkpoints](#download-a-checkpoint) · [Model serving](#serve-a-policy) · [Training](#training) · [Citation](#citation)
 
@@ -116,13 +116,13 @@ conda activate RoboTwin
 python -m pip install -e /path/to/openpi/packages/openpi-client
 ```
 
-Run the [RoboTwin-PACE single-task example](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-one-task) with the same task and port. Each evaluation runs 100 episodes. The client selects PACE or Fixed; the server returns the full action chunk.
+Run the [PACE single-task example](https://github.com/niejunnan25/PACE/blob/main/README.md#evaluate-one-task) with the same task and port. Each evaluation runs 100 episodes. The client selects PACE or Fixed; the server returns the full action chunk.
 
 Stop the server with Ctrl-C after each run and start a fresh server for the next one.
 
-For all 50 tasks, the [RoboTwin-PACE batch script](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/README.md#evaluate-multiple-tasks) manages the model servers and simulation clients automatically.
+For all 50 tasks, the [PACE batch script](https://github.com/niejunnan25/PACE/blob/main/README.md#evaluate-multiple-tasks) manages the model servers and simulation clients automatically.
 
-In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/RoboTwin-PACE/blob/main/pace/scripts/eval.yaml): set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the task checkpoints. `server_python` is relative to the OpenPI workspace, or can be an absolute interpreter path; the default is `.venv/bin/python`.
+In the RoboTwin workspace, edit [`pace/scripts/eval.yaml`](https://github.com/niejunnan25/PACE/blob/main/pace/scripts/eval.yaml): set `openpi_root` to your OpenPI directory and `checkpoint_root` to the directory containing the task checkpoints. `server_python` is relative to the OpenPI workspace, or can be an absolute interpreter path; the default is `.venv/bin/python`.
 
 <a id="training"></a>
 
